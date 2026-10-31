@@ -1,18 +1,6 @@
 {
-  "flutter": {
-    "platforms": {
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "lpsintranet",
-          "configurations": {
-            "web": "1:425325231411:web:7f1c44609e9886a1d75246"
-          }
-        }
-      }
-    }
-  },
   "hosting": {
-    "site": "pgp-admin",
+    "site": "pgp-portal-e671e",
     "public": "build/web",
     "ignore": [
       "firebase.json",
