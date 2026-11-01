@@ -1461,6 +1461,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                             _th('Friendly name', flex: 2),
                             _th('Serienr', flex: 2),
                             _th('Inlösare', flex: 2),
+                            _th('Max kr', flex: 2),
                             const SizedBox(width: 40),
                           ]),
                         ),
@@ -1507,6 +1508,11 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                                     Expanded(flex: 2, child: Text(d['friendly_name'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['serial_nr'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['acquirer'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
+                                    Expanded(flex: 2, child: () {
+                                      final max = d['inv_max_amount'];
+                                      if (max == null) return const Text('—', style: TextStyle(fontSize: 13, color: Color(0xFF888888)));
+                                      return Text('${max} kr', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5)));
+                                    }()),
                                     const Icon(Icons.chevron_right, size: 18, color: Color(0xFF888888)),
                                   ]),
                                 ),
