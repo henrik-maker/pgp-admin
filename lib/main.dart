@@ -1553,7 +1553,7 @@ class _PrepareOrderDetailState extends State<_PrepareOrderDetail> {
   void initState() {
     super.initState();
     final d = widget.doc.data() as Map<String, dynamic>;
-    _maxAmountCtrl = TextEditingController(text: d['maxAmount']?.toString() ?? '');
+    _maxAmountCtrl = TextEditingController(text: d['inv_max_amount']?.toString() ?? '');
   }
 
   @override
@@ -1566,7 +1566,7 @@ class _PrepareOrderDetailState extends State<_PrepareOrderDetail> {
     final val = int.tryParse(_maxAmountCtrl.text.trim());
     if (val == null) return;
     setState(() => _savingMax = true);
-    await widget.doc.reference.update({'maxAmount': val});
+    await widget.doc.reference.update({'inv_max_amount': val});
     if (mounted) setState(() => _savingMax = false);
   }
 
