@@ -1406,7 +1406,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
     try {
       final snap = await FirebaseFirestore.instance
           .collection('invoices1')
-          .where('kund_ref', isEqualTo: kundRef)
+          .where('kundref', isEqualTo: kundRef)
           .orderBy('period', descending: true)
           .limit(1)
           .get();
