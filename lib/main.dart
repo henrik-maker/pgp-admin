@@ -21,7 +21,6 @@ const FirebaseOptions _invoiceCustomerOptions = FirebaseOptions(
   messagingSenderId: '13475529912',
   projectId: 'invoicecustomer-bdde7',
   authDomain: 'invoicecustomer-bdde7.firebaseapp.com',
-  databaseURL: 'https://invoicecustomer-bdde7.firebaseio.com',
   storageBucket: 'invoicecustomer-bdde7.appspot.com',
   measurementId: 'G-CGSJ552B70',
 );
