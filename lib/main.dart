@@ -1387,12 +1387,13 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
   }
 
   List<DocumentSnapshot> get _filtered {
-    final sorted = List<DocumentSnapshot>.from(_docs)
-      ..sort((a, b) {
-        final ka = ((a.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
-        final kb = ((b.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
-        return ka.compareTo(kb);
-      });
+    final seen = <String>{};
+    final deduped = _docs.where((d) => seen.add(d.id)).toList();
+    final sorted = deduped..sort((a, b) {
+      final ka = ((a.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
+      final kb = ((b.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
+      return ka.compareTo(kb);
+    });
     if (widget.search.isEmpty) return sorted;
     final q = widget.search.toLowerCase();
     return sorted.where((d) {
@@ -1455,7 +1456,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                           child: Row(children: [
                             _th('Butik', flex: 3),
                             _th('Företag', flex: 3),
-                            _th('Org.nr', flex: 2),
+                            _th('Friendly name', flex: 2),
                             _th('Serienr', flex: 2),
                             _th('Inlösare', flex: 2),
                             const SizedBox(width: 40),
@@ -1501,7 +1502,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                                       Flexible(child: Text(d['merchant_site'] ?? '—', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13), overflow: TextOverflow.ellipsis)),
                                     ])),
                                     Expanded(flex: 3, child: Text(d['merchant_company'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)), overflow: TextOverflow.ellipsis)),
-                                    Expanded(flex: 2, child: Text(d['orgnr'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
+                                    Expanded(flex: 2, child: Text(d['friendly_name'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['serial_nr'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['acquirer'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     const Icon(Icons.chevron_right, size: 18, color: Color(0xFF888888)),
