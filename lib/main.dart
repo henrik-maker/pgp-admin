@@ -1388,7 +1388,10 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
 
   List<DocumentSnapshot> get _filtered {
     final seen = <String>{};
-    final deduped = _docs.where((d) => seen.add(d.id)).toList();
+    final deduped = _docs.where((d) {
+      final serial = ((d.data() as Map<String, dynamic>)['serial_nr'] ?? d.id).toString();
+      return seen.add(serial);
+    }).toList();
     final sorted = deduped..sort((a, b) {
       final ka = ((a.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
       final kb = ((b.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
