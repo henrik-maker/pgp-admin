@@ -1345,6 +1345,7 @@ class _PrepareOrderList extends StatefulWidget {
 class _PrepareOrderListState extends State<_PrepareOrderList> {
   static const int _pageSize = 25;
   final List<DocumentSnapshot> _docs = [];
+  final Set<String> _seenSerials = {};
   DocumentSnapshot? _lastDoc;
   bool _loading = false;
   bool _hasMore = true;
@@ -1376,7 +1377,10 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
 
       final snap = await q.get();
       setState(() {
-        _docs.addAll(snap.docs);
+        for (final doc in snap.docs) {
+          final serial = ((doc.data() as Map<String, dynamic>)['serial_nr'] ?? doc.id).toString();
+          if (_seenSerials.add(serial)) _docs.add(doc);
+        }
         _lastDoc = snap.docs.isNotEmpty ? snap.docs.last : _lastDoc;
         _hasMore = snap.docs.length == _pageSize;
         _loading = false;
@@ -1387,12 +1391,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
   }
 
   List<DocumentSnapshot> get _filtered {
-    final seen = <String>{};
-    final deduped = _docs.where((d) {
-      final serial = ((d.data() as Map<String, dynamic>)['serial_nr'] ?? d.id).toString();
-      return seen.add(serial);
-    }).toList();
-    final sorted = deduped..sort((a, b) {
+    final sorted = List<DocumentSnapshot>.from(_docs)..sort((a, b) {
       final ka = ((a.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
       final kb = ((b.data() as Map<String, dynamic>)['kund_ref'] ?? '').toString();
       return ka.compareTo(kb);
