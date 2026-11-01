@@ -1400,7 +1400,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
     if (maxRaw == null) return;
     final max = (maxRaw is num) ? maxRaw.toDouble() : double.tryParse(maxRaw.toString());
     if (max == null) return;
-    final kundRef = (d['kund_ref'] ?? '').toString();
+    final kundRef = (d['kundref'] ?? d['kund_ref'] ?? '').toString();
     if (kundRef.isEmpty || _invoiceStatus.containsKey(kundRef)) return;
     _invoiceStatus[kundRef] = null; // loading
     try {
@@ -1502,7 +1502,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                           for (int i = 0; i < docs.length; i++) {
                             final doc = docs[i];
                             final d = doc.data() as Map<String, dynamic>;
-                            final kundRef = (d['kund_ref'] ?? '').toString();
+                            final kundRef = (d['kundref'] ?? d['kund_ref'] ?? '').toString();
                             if (kundRef != lastKundRef) {
                               lastKundRef = kundRef;
                               rows.add(Container(
@@ -1542,7 +1542,7 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                                       () {
                                         final max = d['inv_max_amount'];
                                         if (max == null) return const Text('—', style: TextStyle(fontSize: 13, color: Color(0xFF888888)));
-                                        final kundRef = (d['kund_ref'] ?? '').toString();
+                                        final kundRef = (d['kundref'] ?? d['kund_ref'] ?? '').toString();
                                         final status = _invoiceStatus[kundRef];
                                         Widget dot;
                                         if (status == null) dot = const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5));
