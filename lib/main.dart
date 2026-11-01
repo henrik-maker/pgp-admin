@@ -1537,20 +1537,48 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
 }
 
 // ─── Prepare Order Detail ─────────────────────────────────────
-class _PrepareOrderDetail extends StatelessWidget {
+class _PrepareOrderDetail extends StatefulWidget {
   final DocumentSnapshot doc;
   final VoidCallback onBack;
   const _PrepareOrderDetail({required this.doc, required this.onBack});
+  @override
+  State<_PrepareOrderDetail> createState() => _PrepareOrderDetailState();
+}
+
+class _PrepareOrderDetailState extends State<_PrepareOrderDetail> {
+  late TextEditingController _maxAmountCtrl;
+  bool _savingMax = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.doc.data() as Map<String, dynamic>;
+    _maxAmountCtrl = TextEditingController(text: d['maxAmount']?.toString() ?? '');
+  }
+
+  @override
+  void dispose() {
+    _maxAmountCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveMaxAmount() async {
+    final val = int.tryParse(_maxAmountCtrl.text.trim());
+    if (val == null) return;
+    setState(() => _savingMax = true);
+    await widget.doc.reference.update({'maxAmount': val});
+    if (mounted) setState(() => _savingMax = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final d = doc.data() as Map<String, dynamic>;
+    final d = widget.doc.data() as Map<String, dynamic>;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         TextButton.icon(
-          onPressed: onBack,
+          onPressed: widget.onBack,
           icon: const Icon(Icons.arrow_back, size: 16),
           label: const Text('Tillbaka till beställningar'),
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF185FA5), padding: EdgeInsets.zero),
@@ -1600,6 +1628,28 @@ class _PrepareOrderDetail extends StatelessWidget {
             _infoRow('Inlösare', d['acquirer']),
             _infoRow('Refset', d['refset']),
             _infoRow('Nets Baxi ID', d['Nets Baxi id']),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: Color(0xFFE8E8E8)),
+            const SizedBox(height: 8),
+            Row(children: [
+              const SizedBox(width: 110, child: Text('Max belopp', style: TextStyle(fontSize: 13, color: Color(0xFF888888)))),
+              Expanded(child: SizedBox(height: 36, child: TextField(
+                controller: _maxAmountCtrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  suffixText: 'kr',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ))),
+              const SizedBox(width: 8),
+              SizedBox(height: 36, child: ElevatedButton(
+                onPressed: _savingMax ? null : _saveMaxAmount,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF185FA5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 14)),
+                child: _savingMax ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Spara', style: TextStyle(fontSize: 13)),
+              )),
+            ]),
           ])),
           const SizedBox(width: 16),
           Expanded(child: _infoCard('Övrigt', [
