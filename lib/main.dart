@@ -1346,6 +1346,8 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
   static const int _pageSize = 25;
   final List<DocumentSnapshot> _docs = [];
   final Set<String> _seenSerials = {};
+  // cache: kund_ref -> null=loading, true=over limit, false=ok, 'none'=no invoice
+  final Map<String, dynamic> _invoiceStatus = {};
   DocumentSnapshot? _lastDoc;
   bool _loading = false;
   bool _hasMore = true;
@@ -1376,17 +1378,45 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
       if (_lastDoc != null) q = q.startAfterDocument(_lastDoc!);
 
       final snap = await q.get();
+      final newDocs = <DocumentSnapshot>[];
       setState(() {
         for (final doc in snap.docs) {
           final serial = ((doc.data() as Map<String, dynamic>)['serial_nr'] ?? doc.id).toString();
-          if (_seenSerials.add(serial)) _docs.add(doc);
+          if (_seenSerials.add(serial)) { _docs.add(doc); newDocs.add(doc); }
         }
         _lastDoc = snap.docs.isNotEmpty ? snap.docs.last : _lastDoc;
         _hasMore = snap.docs.length == _pageSize;
         _loading = false;
       });
+      for (final doc in newDocs) _checkInvoice(doc);
     } catch (e) {
       setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  Future<void> _checkInvoice(DocumentSnapshot doc) async {
+    final d = doc.data() as Map<String, dynamic>;
+    final maxRaw = d['inv_max_amount'];
+    if (maxRaw == null) return;
+    final max = (maxRaw is num) ? maxRaw.toDouble() : double.tryParse(maxRaw.toString());
+    if (max == null) return;
+    final kundRef = (d['kund_ref'] ?? '').toString();
+    if (kundRef.isEmpty || _invoiceStatus.containsKey(kundRef)) return;
+    _invoiceStatus[kundRef] = null; // loading
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('invoices1')
+          .where('kund_ref', isEqualTo: kundRef)
+          .orderBy('period', descending: true)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) { if (mounted) setState(() => _invoiceStatus[kundRef] = 'none'); return; }
+      final inv = snap.docs.first.data() as Map<String, dynamic>;
+      final totalStr = (inv['totalsumma'] ?? '').toString().replaceAll(RegExp(r'[^\d.,]'), '').replaceAll(',', '.');
+      final total = double.tryParse(totalStr) ?? 0;
+      if (mounted) setState(() => _invoiceStatus[kundRef] = total > max);
+    } catch (_) {
+      if (mounted) setState(() => _invoiceStatus[kundRef] = 'none');
     }
   }
 
@@ -1508,11 +1538,24 @@ class _PrepareOrderListState extends State<_PrepareOrderList> {
                                     Expanded(flex: 2, child: Text(d['friendly_name'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['serial_nr'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                     Expanded(flex: 2, child: Text(d['acquirer'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
-                                    Expanded(flex: 2, child: () {
-                                      final max = d['inv_max_amount'];
-                                      if (max == null) return const Text('—', style: TextStyle(fontSize: 13, color: Color(0xFF888888)));
-                                      return Text('${max} kr', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5)));
-                                    }()),
+                                    Expanded(flex: 2, child: Row(children: [
+                                      () {
+                                        final max = d['inv_max_amount'];
+                                        if (max == null) return const Text('—', style: TextStyle(fontSize: 13, color: Color(0xFF888888)));
+                                        final kundRef = (d['kund_ref'] ?? '').toString();
+                                        final status = _invoiceStatus[kundRef];
+                                        Widget dot;
+                                        if (status == null) dot = const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5));
+                                        else if (status == true) dot = const Icon(Icons.circle, size: 10, color: Color(0xFFD32F2F));
+                                        else if (status == false) dot = const Icon(Icons.circle, size: 10, color: Color(0xFF388E3C));
+                                        else dot = const SizedBox(width: 10);
+                                        return Row(children: [
+                                          dot,
+                                          const SizedBox(width: 6),
+                                          Text('$max kr', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
+                                        ]);
+                                      }(),
+                                    ])),
                                     const Icon(Icons.chevron_right, size: 18, color: Color(0xFF888888)),
                                   ]),
                                 ),
