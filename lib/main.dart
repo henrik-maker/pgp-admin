@@ -683,7 +683,6 @@ class _InvoiceListState extends State<_InvoiceList> {
   bool _loading = false;
   bool _hasMore = true;
   final ScrollController _scrollCtrl = ScrollController();
-  final Map<String, String> _friendlyNames = {}; // avtalsnr -> friendly_name
 
   @override
   void initState() {
@@ -717,25 +716,6 @@ class _InvoiceListState extends State<_InvoiceList> {
       _hasMore = newDocs.length == _pageSize;
       _loading = false;
     });
-    for (final doc in newDocs) _lookupFriendlyName(doc);
-  }
-
-  Future<void> _lookupFriendlyName(DocumentSnapshot doc) async {
-    final d = doc.data() as Map<String, dynamic>;
-    final avtalsnr = (d['avtalsnr'] ?? '').toString();
-    if (avtalsnr.isEmpty || _friendlyNames.containsKey(avtalsnr)) return;
-    _friendlyNames[avtalsnr] = '';
-    try {
-      final snap = await FirebaseFirestore.instance
-          .collection('prepare_order_ro')
-          .where('avtalsnr', isEqualTo: avtalsnr)
-          .limit(1)
-          .get();
-      if (snap.docs.isNotEmpty && mounted) {
-        final name = (snap.docs.first.data()['friendly_name'] ?? '').toString();
-        setState(() => _friendlyNames[avtalsnr] = name);
-      }
-    } catch (_) {}
   }
 
   List<DocumentSnapshot> get _filtered {
@@ -829,7 +809,7 @@ class _InvoiceListState extends State<_InvoiceList> {
                                     const SizedBox(width: 10),
                                     Flexible(child: Text(d['stalle'] ?? '—', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13), overflow: TextOverflow.ellipsis)),
                                   ])),
-                                  Expanded(flex: 2, child: Text(_friendlyNames[(d['avtalsnr'] ?? '').toString()] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
+                                  Expanded(flex: 2, child: Text(d['levadress'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                   Expanded(flex: 2, child: Text(d['faktura'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                   Expanded(flex: 2, child: Text(d['serienr'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)))),
                                   Expanded(flex: 3, child: Text(d['period'] ?? '—', style: const TextStyle(fontSize: 13, color: Color(0xFF555555)), overflow: TextOverflow.ellipsis)),
@@ -865,46 +845,20 @@ class _InvoiceListState extends State<_InvoiceList> {
 }
 
 // ─── Invoice Detail ───────────────────────────────────────────
-class _InvoiceDetail extends StatefulWidget {
+class _InvoiceDetail extends StatelessWidget {
   final DocumentSnapshot doc;
   final VoidCallback onBack;
   const _InvoiceDetail({required this.doc, required this.onBack});
-  @override
-  State<_InvoiceDetail> createState() => _InvoiceDetailState();
-}
-
-class _InvoiceDetailState extends State<_InvoiceDetail> {
-  String? _friendlyName;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchFriendlyName();
-  }
-
-  Future<void> _fetchFriendlyName() async {
-    final d = widget.doc.data() as Map<String, dynamic>;
-    final avtalsnr = (d['avtalsnr'] ?? '').toString();
-    if (avtalsnr.isEmpty) return;
-    final snap = await FirebaseFirestore.instance
-        .collection('prepare_order_ro')
-        .where('avtalsnr', isEqualTo: avtalsnr)
-        .limit(1)
-        .get();
-    if (snap.docs.isNotEmpty && mounted) {
-      setState(() => _friendlyName = (snap.docs.first.data()['friendly_name'] ?? '').toString());
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final d = widget.doc.data() as Map<String, dynamic>;
+    final d = doc.data() as Map<String, dynamic>;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         TextButton.icon(
-          onPressed: widget.onBack,
+          onPressed: onBack,
           icon: const Icon(Icons.arrow_back, size: 16),
           label: const Text('Tillbaka till fakturalistan'),
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF185FA5), padding: EdgeInsets.zero),
@@ -939,7 +893,7 @@ class _InvoiceDetailState extends State<_InvoiceDetail> {
           ])),
           const SizedBox(width: 16),
           Expanded(child: _infoCard('Terminal & Produkt', [
-            _infoRow('Friendly name', _friendlyName == null ? '...' : _friendlyName!.isEmpty ? '—' : _friendlyName),
+            _infoRow('Friendly name', d['levadress']),
             _infoRow('Serienr', d['serienr']),
             _infoRow('Site ID', d['siteid']),
             _infoRow('Prodnummer', d['prodnummer']),
